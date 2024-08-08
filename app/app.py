@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 import logging
 import os
 
@@ -6,6 +7,7 @@ import os
 def create_app():
 
     app = Flask(__name__)
+    CORS(app)
     logger = logging.getLogger(__name__)
     logging.basicConfig(filename="log.txt", level=logging.DEBUG)
 
