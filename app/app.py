@@ -1,56 +1,40 @@
 from flask import Flask
-from flask_cors import CORS
-import logging
-import os
+import sqlite3
+
+conn = sqlite3.connect('catcount.db')
+cursor = conn.cursor()
+cursor.execute('CREATE TABLE IF NOT EXISTS catcount (id INTEGER PRIMARY KEY, count INTEGER)')
+# cursor.execute('INSERT INTO catcount (count) VALUES (2)')
+conn.commit()
+conn.close()
+
+app = Flask(__name__)
+
+@app.route('/')
+def root_call():
+    return "Hello World!"
 
 
-def create_app():
+@app.route('/get_cat_count', methods=['GET'])
+def get_current_count():
+    conn = sqlite3.connect('catcount.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT count FROM catcount WHERE id = 1')
+    result = cursor.fetchone()
+    conn.close()
+    print('Count retrieved')
+    if result:
+        return str(result[0])
+    else:
+        return None
 
-    app = Flask(__name__)
-    CORS(app)
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(filename="log.txt", level=logging.DEBUG)
 
-    base_dir = os.path.abspath(os.path.dirname(__file__))
-    cat_count_file = os.path.join(base_dir, 'cat_count.txt')
-
-    global cat_count
-    cat_count = 0
-
-    with open(cat_count_file, 'r') as file:
-        try:
-            cat_count = int(file.read())
-            logger.info('Reading cat_count.txt')
-        except Exception as e:
-            logger.error(e)
-            logger.error('Error reading cat_count.txt! Reverting to 0...')
-
-    @app.route('/get_cat_count')
-    def get_cat_count():
-        global cat_count
-
-        with open(cat_count_file, 'r') as file:
-            try:
-                cat_count = int(file.read())
-                logger.info('Reading cat_count.txt')
-            except Exception as e:
-                logger.error(e)
-                logger.error('Error reading cat_count.txt! Reverting to 0...')
-
-        logger.info('Cat count requested')
-        return f'{cat_count}'
-
-    @app.route('/increment_cat_count')
-    def increment_cat_count():
-        global cat_count
-        cat_count += 1
-        with open(cat_count_file, 'w') as fileA:
-            fileA.write(str(cat_count))
-            logger.info('Cat count incremented')
-
-        return 'Cat count incremented'
-
-    return app
-    # if __name__ == '__main__':
-    #     logger.info('API sever starting...')
-    #     app.run()
+@app.route('/increment_cat_count', methods=['POST', 'GET'])
+def increment_count():
+    conn = sqlite3.connect('catcount.db')
+    cursor = conn.cursor()
+    cursor.execute('UPDATE catcount SET count = count + 1 WHERE id = 1')
+    conn.commit()
+    conn.close()
+    print('Count incremented')
+    return "Count incremented"
